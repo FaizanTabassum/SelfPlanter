@@ -10,7 +10,7 @@ int soilMoistureRelayPin = 10;           // soil moisture relay pin
 
 
 
-
+#include "LibPrintf.h"
 #define RLOAD 22.0
 #include "MQ135.h"
 #include "DHT.h"
@@ -352,21 +352,15 @@ void printSensorData() {
   if (currentMillis - lastMillis >= 2000) { // check if 5 seconds have elapsed
     lastMillis = currentMillis;
     
-    // String humstr = String(hum, 2);
-    // String tempstr = String(temp, 2);
-    // String soilMoisturestr = String(soilMoisture, 2);
-    // String ppmstr = String(ppm, 2);
-    // char output[80];
-    // sprintf(output, "%d %d %d %d", soilMoisture, temp, hum, ppm);
-    // Serial.println(output);
-    Serial.print("Humidity: ");
-    Serial.println(hum);
-    Serial.print("Temperature: ");
-    Serial.println(temp);
-    Serial.print("SoilMoisture: ");
-    Serial.println(soilMoisture);
-    Serial.print("Co2 level: ");
-    Serial.println(ppm);
+    // Serial.print("Humidity: ");
+    // Serial.println(hum);
+    // Serial.print("Temperature: ");
+    // Serial.println(temp);
+    // Serial.print("SoilMoisture: ");
+    // Serial.println(soilMoisture);
+    // Serial.print("Co2 level: ");
+    // Serial.println(ppm);
+    printf("%f-%f-%i-%f \n",hum,temp,soilMoisture,ppm);
   
   }
 }
