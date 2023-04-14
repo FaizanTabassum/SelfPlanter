@@ -58,6 +58,8 @@ const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "RTClib.h"
+RTC_DS3231 rtc;
 
 #define OLED_RESET A3
 Adafruit_SSD1306 display(OLED_RESET);
@@ -108,7 +110,9 @@ unsigned long last_debounce_time = 0;
 const unsigned long debounce_delay = 50;
 
 void setup() {
-  Serial.begin(9600);                   // initialize serial communication
+  Serial.begin(9600);   
+  Wire.begin();
+  rtc.begin();                // initialize serial communication
   pinMode(mq135Pin,INPUT);              // input for the mq135 pin
   pinMode(soilPin,INPUT);               // input for the soil pin
   pinMode(tempRelayPin, OUTPUT);        // set temperature relay pin as output
@@ -327,22 +331,16 @@ void waterover(){
   }
   
 void blinkLed() {
-  // Get current time
-  currentMillis = millis();
+  DateTime now = rtc.now();
+  int hour = now.hour();
+  int minute = now.minute();
+  int second = now.second();
 
-  // Check if it's time to blink
-  if (currentMillis - previousMillis >= BLINK_INTERVAL) {
-    // Save the current time as the previous time
-    previousMillis = currentMillis;
-
-    // Toggle LED state
-    ledState = !ledState;
-
-    // Update LED
-    digitalWrite(LED_PIN, ledState);
-  } else {
-    // Keep LED on for the first 12 hours
-    digitalWrite(LED_PIN, true);
+  if (hour == 6 && minute == 0 && second == 0) {
+    digitalWrite(LED_PIN, HIGH); // turn on LED at 6 AM
+  }
+  if (hour == 18 && minute == 0 && second == 0) {
+    digitalWrite(LED_PIN, LOW); // turn off LED at 6 PM
   }
 }
 void printSensorData() {
