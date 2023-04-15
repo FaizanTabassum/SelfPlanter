@@ -171,22 +171,6 @@ void printPlantData(Plant plant) {
   airQualityThreshold = plant.co2_level;  // air quality threshold
   soilMoistureThreshold = plant.soil_moisture;
   Serial.begin(9600);
-  // Serial.print("Name: ");
-  // Serial.println(plant.name);
-  // Serial.print("Humidity: ");
-  // Serial.print(plant.humidity);
-  // Serial.println("%");
-  // Serial.print("Soil Moisture: ");
-  // Serial.print(plant.soil_moisture);
-  // Serial.println("%");
-  // Serial.print("Temperature: ");
-  // Serial.print(plant.temperature);
-  // Serial.println("°C");
-  // Serial.print("CO2 Level: ");
-  // Serial.print(plant.co2_level);
-  // Serial.println("ppm");
-  // Serial.print("NPK Ratio: ");
-  // Serial.println(plant.npk_ratio);
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -349,25 +333,20 @@ void blinkLed() {
   if (hour >= 6 && hour < 18) {
     digitalWrite(LED_PIN, HIGH);  // turn on LED at 6 AM
   }
-  if (hour >= 18 && hour < 6) {
+  if (hour >= 18 || hour < 6) {
     digitalWrite(LED_PIN, LOW);  // turn off LED at 6 PM
   }
 }
 void printSensorData() {
   static unsigned long lastMillis = 0;
   unsigned long currentMillis = millis();
+  // float rzero = gasSensor.getRZero(); // uncomment for ppm callibration
+  
 
-  if (currentMillis - lastMillis >= 2000) {  // check if 5 seconds have elapsed
+  if (currentMillis - lastMillis >= 2000) {  // check if 2 seconds have elapsed
     lastMillis = currentMillis;
 
-    // Serial.print("Humidity: ");
-    // Serial.println(hum);
-    // Serial.print("Temperature: ");
-    // Serial.println(temp);
-    // Serial.print("SoilMoisture: ");
-    // Serial.println(soilMoisture);
-    // Serial.print("Co2 level: ");
-    // Serial.println(ppm);
+    // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
     printf("%.2f-%.2f-%i-%.2f \n", hum, temp, soilMoisture, ppm);
   }
 }
