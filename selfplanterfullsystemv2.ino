@@ -220,7 +220,7 @@ void loop() {
   ppm = gasSensor.getPPM();
 
   // read soil moisture from capacitive sensor
-  soilMoisture = map(analogRead(soilPin), 750, 430, 0, 100);
+  soilMoisture = map(analogRead(soilPin), 750, 350, 0, 100);
 
   unsigned long current_time = millis();
 
@@ -346,10 +346,10 @@ void blinkLed() {
   int minute = now.minute();
   int second = now.second();
 
-  if (hour == 6 && minute == 0 && second == 0) {
+  if (hour >= 6 && hour < 18) {
     digitalWrite(LED_PIN, HIGH);  // turn on LED at 6 AM
   }
-  if (hour == 18 && minute == 0 && second == 0) {
+  if (hour >= 18 && hour < 6) {
     digitalWrite(LED_PIN, LOW);  // turn off LED at 6 PM
   }
 }
@@ -368,7 +368,7 @@ void printSensorData() {
     // Serial.println(soilMoisture);
     // Serial.print("Co2 level: ");
     // Serial.println(ppm);
-    printf("%f-%f-%i-%f \n", hum, temp, soilMoisture, ppm);
+    printf("%.2f-%.2f-%i-%.2f \n", hum, temp, soilMoisture, ppm);
   }
 }
 
