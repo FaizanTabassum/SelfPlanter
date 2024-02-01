@@ -6,6 +6,7 @@
 #include <Adafruit_SSD1306.h>
 #include "RTClib.h"
 #include "lights.h"
+#include "AirPump.h"
 
 #define DHTPIN 3
 #define RLOAD 22.0
@@ -54,21 +55,25 @@ int soilMoistureThreshold = 10;  // soil moisture threshold
 int N = 0;
 int P = 0;
 int K = 0;
-const int motor1Pin = 7;              // Pin connected to the motor 1 pump
-const int motor2Pin = 8;              // Pin connected to the motor 2 pump
-const int motor3Pin = 9;              // Pin connected to the motor 3 pump
+const int motorN = 7;              // Pin connected to the motor 1 pump
+const int motorP = 8;              // Pin connected to the motor 2 pump
+const int motorK = 9;              // Pin connected to the motor 3 pump
 const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
+const float totalSolution = 100.0;  // Total solution in liters
+
+AirPump pump(motorN, motorP, motorK);
 
 
 RTC_DS3231 rtc;
 
 #define OLED_RESET A3
 Adafruit_SSD1306 display(OLED_RESET);
-
 #define BUTTON_UP 0
 #define BUTTON_DOWN 4
 #define BUTTON_SELECT 2
 
+
+// put all this in the raspberry pi, all plant data
 struct Plant {
   const char* name;
   uint8_t humidity;
@@ -112,6 +117,7 @@ const unsigned long debounce_delay = 50;
 
 void setup() {
   light.init();
+  pump.init();
   Serial.begin(9600);
   Wire.begin();
   rtc.begin();                            // initialize serial communication
@@ -122,10 +128,6 @@ void setup() {
   pinMode(airQualityRelayPin, OUTPUT);    // set air quality relay pin as output
   pinMode(soilMoistureRelayPin, OUTPUT);  // set soil moisture relay pin as output
 
-  pinMode(motor1Pin, OUTPUT);
-  pinMode(motor2Pin, OUTPUT);
-  pinMode(motor3Pin, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
 
   dht.begin();  // initialize the sensor
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -150,7 +152,9 @@ void drawMenu() {
     uint8_t plant_index = top_menu_item_index + i;
     if (plant_index == current_plant_index) {
       display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    } else {
+    }
+    else
+    {
       display.setTextColor(SSD1306_WHITE);
     }
     display.println(plants[plant_index].name);
@@ -167,7 +171,6 @@ void printPlantData(Plant plant) {
 
   token = strtok(NULL, "-");
   K = atoi(token);
-  runWaterPumps(N, P, K);
   tempThreshold = plant.temperature;      // temperature threshold (in °C)
   humThreshold = plant.humidity;          // humidity threshold (in %)
   airQualityThreshold = plant.co2_level;  // air quality threshold
@@ -197,6 +200,7 @@ void printPlantData(Plant plant) {
 void loop() {
 
   light.start();
+  pump.runMotor(N,P,K,pumpRate,totalSolution);
 
   // read temperature and humidity from DHT11 sensor
   hum = dht.readHumidity();
@@ -252,7 +256,9 @@ void relaycontrol() {
     if (temp > tempThreshold) {
       digitalWrite(tempRelayPin, HIGH);
       digitalWrite(airQualityRelayPin, HIGH);
-    } else {
+    }
+    else
+    {
       digitalWrite(tempRelayPin, LOW);
       digitalWrite(airQualityRelayPin, LOW);
     }
@@ -340,65 +346,4 @@ void printSensorData() {
   }
 }
 
-void runWaterPumps(float nitrogenRatio, float phosphorusRatio, float potassiumRatio) {
-  // Calculate the amount of solution to add for each element (in ml)
-  float totalSolution = 100.0;  // Total volume of the main tank in ml
-  float nitrogenSolution = totalSolution * nitrogenRatio / 100.0;
-  float phosphorusSolution = totalSolution * phosphorusRatio / 100.0;
-  float potassiumSolution = totalSolution * potassiumRatio / 100.0;
 
-  // Calculate the time to run each pump
-  float nitrogenTime = 2 + (nitrogenSolution / (pumpRate * 200.0));
-  float phosphorusTime = 2 + (phosphorusSolution / (pumpRate * 200.0));
-  float potassiumTime = 2 + (potassiumSolution / (pumpRate * 200.0));
-
-  // Print the calculated pump times
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.print("N time: ");
-  display.print(nitrogenTime);
-  display.println(" s");
-  display.print("P time: ");
-  display.print(phosphorusTime);
-  display.println(" s");
-  display.print("K time: ");
-  display.print(potassiumTime);
-  display.println(" s");
-  display.print(N);
-  display.print("-");
-  display.print(P);
-  display.print("-");
-  display.print(K);
-  display.display();
-
-  // Start the timer
-  unsigned long startTime = millis();
-
-  // Run the pumps for the required time to add the desired amount of solution
-  while (millis() - startTime < (nitrogenTime + phosphorusTime + potassiumTime) * 1000) {
-    if (millis() - startTime < nitrogenTime * 1000) {
-      digitalWrite(motor1Pin, HIGH);  // Start the motor 1 pump
-    } else {
-      digitalWrite(motor1Pin, LOW);  // Stop the motor 1 pump
-    }
-
-    if (millis() - startTime < phosphorusTime * 1000) {
-      digitalWrite(motor2Pin, HIGH);  // Start the motor 2 pump
-    } else {
-      digitalWrite(motor2Pin, LOW);  // Stop the motor 2 pump
-    }
-
-    if (millis() - startTime < potassiumTime * 1000) {
-      digitalWrite(motor3Pin, HIGH);  // Start the motor 3 pump
-    } else {
-      digitalWrite(motor3Pin, LOW);  // Stop the motor 3 pump
-    }
-  }
-
-  // Stop all the motors
-  digitalWrite(motor1Pin, LOW);
-  digitalWrite(motor2Pin, LOW);
-  digitalWrite(motor3Pin, LOW);
-}
