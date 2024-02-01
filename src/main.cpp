@@ -1,4 +1,12 @@
-// all pins will be defined here
+#include <Arduino.h>
+#include <LibPrintf.h>
+#include <MQ135.h>
+#include <DHT.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <RTClib.h>
+
 #define DHTPIN 3
 const int LED_PIN = 13;
 const int mq135Pin = A0;        // Analog input pin connected to the MQ135 gas sensor
@@ -10,10 +18,8 @@ int soilMoistureRelayPin = 10;  // soil moisture relay pin
 
 
 
-#include "LibPrintf.h"
+
 #define RLOAD 22.0
-#include "MQ135.h"
-#include "DHT.h"
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -55,10 +61,7 @@ const int motor2Pin = 8;              // Pin connected to the motor 2 pump
 const int motor3Pin = 9;              // Pin connected to the motor 3 pump
 const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
 
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include "RTClib.h"
+
 RTC_DS3231 rtc;
 
 #define OLED_RESET A3
@@ -108,6 +111,14 @@ uint8_t top_menu_item_index = 0;
 
 unsigned long last_debounce_time = 0;
 const unsigned long debounce_delay = 50;
+
+void runWaterPumps(){}
+void drawMenu() {}
+void printPlantData() {}
+void relaycontrol() {}
+void waterover() {}
+void blinkLed() {}
+void printSensorData() {}
 
 void setup() {
   Serial.begin(9600);
