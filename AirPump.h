@@ -38,6 +38,11 @@ public:
     nitrogenTime = 2 + (nitrogenSolution / (pumpRate * 200.0));
     phosphorusTime = 2 + (phosphorusSolution / (pumpRate * 200.0));
     potassiumTime = 2 + (potassiumSolution / (pumpRate * 200.0));
+    Serial.println("N P K times");
+    Serial.print(nitrogenTime);
+    Serial.print(phosphorusTime);
+    Serial.print(potassiumTime);
+
 
     unsigned long startTime = millis();
 
@@ -66,16 +71,5 @@ public:
     digitalWrite(motorK, LOW);
   }
 
-  float NTime() {
-    return nitrogenTime;
-  }
-
-  float PTime() {
-    return phosphorusTime;
-  } 
-
-  float KTime() {
-    return potassiumTime;
-  }
 };
 #endif

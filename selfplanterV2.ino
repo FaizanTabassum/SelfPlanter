@@ -127,6 +127,9 @@ void setup() {
   pinMode(airQualityRelayPin, OUTPUT);    // set air quality relay pin as output
   pinMode(soilMoistureRelayPin, OUTPUT);  // set soil moisture relay pin as output
 
+  previouslyFertilized = 0;
+  EEPROM.put(0, previouslyFertilized);
+  delay(200);
 
   dht.begin();  // initialize the sensor
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -171,11 +174,14 @@ void printPlantData(Plant plant) {
   token = strtok(NULL, "-");
   K = atoi(token);
 
-  previouslyFertilized = EEPROM.read(0);
-  if( previouslyFertilized == false){
+  EEPROM.get(0, previouslyFertilized);
+  delay(200);
+  Serial.println(previouslyFertilized);
+  if( previouslyFertilized == 0){
     pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    previouslyFertilized = true;
-    EEPROM.write(0, previouslyFertilized);
+    previouslyFertilized = 5;
+    EEPROM.put(0, previouslyFertilized);
+    delay(200);
   }
   
 
@@ -242,6 +248,7 @@ void loop() {
     } else if (digitalRead(BUTTON_SELECT) == LOW) {
       Plant plant = plants[current_plant_index];
       EEPROM.write(2,current_plant_index);
+      delay(200);
       printPlantData(plant);
       last_debounce_time = current_time;
     }
@@ -325,7 +332,8 @@ void waterover() {
   functionCalled = true;
   startTimeforpump = 0;
   previouslyFertilized = 0;
-  EEPROM.write(0, previouslyFertilized);
+  EEPROM.put(0, previouslyFertilized);
+  delay(200);
   digitalWrite(soilMoistureRelayPin, LOW);
   display.clearDisplay();
   display.setTextSize(1);
