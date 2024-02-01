@@ -1,13 +1,15 @@
-#include <Arduino.h>
-#include <LibPrintf.h>
-#include <MQ135.h>
-#include <DHT.h>
+#include "LibPrintf.h"
+#include "MQ135.h"
+#include "DHT.h"
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <RTClib.h>
+#include "RTClib.h"
+#include "lights.h"
 
 #define DHTPIN 3
+#define RLOAD 22.0
+#define DHTTYPE DHT11
 const int LED_PIN = 13;
 const int mq135Pin = A0;        // Analog input pin connected to the MQ135 gas sensor
 int soilPin = A1;               // soil moisture sensor pin
@@ -16,12 +18,9 @@ int humRelayPin = 6;            // humidity relay pin
 int airQualityRelayPin = 12;    // air quality relay pin
 int soilMoistureRelayPin = 10;  // soil moisture relay pin
 
-
-
-
-#define RLOAD 22.0
-#define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+
+Lights light(13, 1500);
 
 MQ135 gasSensor = MQ135(mq135Pin);
 
@@ -32,8 +31,7 @@ float temp = 0;
 // co2 sensor
 float ppm;  // MQ-135 sensor pin
 
-// Define interval in milliseconds
-const unsigned long BLINK_INTERVAL = 12 * 60 * 60 * 1000UL;  // 12 hours
+
 
 // Variables to store time
 unsigned long previousMillis = 0;
@@ -112,15 +110,8 @@ uint8_t top_menu_item_index = 0;
 unsigned long last_debounce_time = 0;
 const unsigned long debounce_delay = 50;
 
-void runWaterPumps(){}
-void drawMenu() {}
-void printPlantData() {}
-void relaycontrol() {}
-void waterover() {}
-void blinkLed() {}
-void printSensorData() {}
-
 void setup() {
+  light.init();
   Serial.begin(9600);
   Wire.begin();
   rtc.begin();                            // initialize serial communication
@@ -205,7 +196,7 @@ void printPlantData(Plant plant) {
 
 void loop() {
 
-  blinkLed();
+  light.start();
 
   // read temperature and humidity from DHT11 sensor
   hum = dht.readHumidity();
@@ -335,24 +326,11 @@ void waterover() {
   while (true) {}
 }
 
-void blinkLed() {
-  DateTime now = rtc.now();
-  int hour = now.hour();
-  int minute = now.minute();
-  int second = now.second();
-
-  if (hour >= 6 && hour < 18) {
-    digitalWrite(LED_PIN, HIGH);  // turn on LED at 6 AM
-  }
-  if (hour >= 18 || hour < 6) {
-    digitalWrite(LED_PIN, LOW);  // turn off LED at 6 PM
-  }
-}
 void printSensorData() {
   static unsigned long lastMillis = 0;
   unsigned long currentMillis = millis();
   // float rzero = gasSensor.getRZero(); // uncomment for ppm callibration
-  
+
 
   if (currentMillis - lastMillis >= 2000) {  // check if 2 seconds have elapsed
     lastMillis = currentMillis;
