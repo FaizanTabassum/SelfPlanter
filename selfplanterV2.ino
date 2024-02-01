@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <EEPROM.h>
 #include "RTClib.h"
 #include "lights.h"
 #include "AirPump.h"
@@ -11,6 +12,7 @@
 #define DHTPIN 3
 #define RLOAD 22.0
 #define DHTTYPE DHT11
+#define LIGHTPIN 13
 const int LED_PIN = 13;
 const int mq135Pin = A0;        // Analog input pin connected to the MQ135 gas sensor
 int soilPin = A1;               // soil moisture sensor pin
@@ -21,7 +23,7 @@ int soilMoistureRelayPin = 10;  // soil moisture relay pin
 
 DHT dht(DHTPIN, DHTTYPE);
 
-Lights light(13, 1500);
+Lights light(LIGHTPIN, 1500);
 
 MQ135 gasSensor = MQ135(mq135Pin);
 
@@ -30,7 +32,7 @@ int soilMoisture = 0;
 float temp = 0;
 
 // co2 sensor
-float ppm;  // MQ-135 sensor pin
+float ppm;  // decleration of variable for the air quality in ppm
 
 
 
@@ -42,19 +44,17 @@ unsigned long startTimeforpump = 0;  // the time when the sensor value first fel
 bool functionCalled = false;         // flag to indicate if the function has been called
 
 
-// LED state variable
-bool ledState = true;
-
 int tempThreshold = 25;          // temperature threshold (in °C)
 int humThreshold = 40;           // humidity threshold (in %)
 int airQualityThreshold = 1800;  // air quality threshold
 int soilMoistureThreshold = 10;  // soil moisture threshold
 
 
-
-int N = 0;
-int P = 0;
-int K = 0;
+// npk values for the airpumps
+int N;
+int P;
+int K;
+int previouslyFertilized;
 const int motorN = 7;              // Pin connected to the motor 1 pump
 const int motorP = 8;              // Pin connected to the motor 2 pump
 const int motorK = 9;              // Pin connected to the motor 3 pump
@@ -62,10 +62,9 @@ const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
 const float totalSolution = 100.0;  // Total solution in liters
 
 AirPump pump(motorN, motorP, motorK);
-
-
 RTC_DS3231 rtc;
 
+// Oled display parameters
 #define OLED_RESET A3
 Adafruit_SSD1306 display(OLED_RESET);
 #define BUTTON_UP 0
@@ -171,6 +170,15 @@ void printPlantData(Plant plant) {
 
   token = strtok(NULL, "-");
   K = atoi(token);
+
+  previouslyFertilized = EEPROM.read(0);
+  if( previouslyFertilized == false){
+    pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
+    previouslyFertilized = true;
+    EEPROM.write(0, previouslyFertilized);
+  }
+  
+
   tempThreshold = plant.temperature;      // temperature threshold (in °C)
   humThreshold = plant.humidity;          // humidity threshold (in %)
   airQualityThreshold = plant.co2_level;  // air quality threshold
@@ -199,9 +207,7 @@ void printPlantData(Plant plant) {
 
 void loop() {
 
-  light.start();
-  pump.runMotor(N,P,K,pumpRate,totalSolution);
-
+  light.start(); //begins the lighting process which is fading in and out 
   // read temperature and humidity from DHT11 sensor
   hum = dht.readHumidity();
   temp = dht.readTemperature();
@@ -214,9 +220,7 @@ void loop() {
 
   unsigned long current_time = millis();
 
-  // Check if enough time has elapsed for button debounce
   if (current_time - last_debounce_time >= debounce_delay) {
-    // Button debounce time has elapsed, so check button presses
     if (digitalRead(BUTTON_UP) == LOW) {
       if (current_plant_index > 0) {
         current_plant_index--;
@@ -237,6 +241,7 @@ void loop() {
       last_debounce_time = current_time;
     } else if (digitalRead(BUTTON_SELECT) == LOW) {
       Plant plant = plants[current_plant_index];
+      EEPROM.write(2,current_plant_index);
       printPlantData(plant);
       last_debounce_time = current_time;
     }
@@ -319,6 +324,8 @@ void relaycontrol() {
 void waterover() {
   functionCalled = true;
   startTimeforpump = 0;
+  previouslyFertilized = 0;
+  EEPROM.write(0, previouslyFertilized);
   digitalWrite(soilMoistureRelayPin, LOW);
   display.clearDisplay();
   display.setTextSize(1);
