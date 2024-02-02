@@ -61,6 +61,8 @@ const int motorK = 9;              // Pin connected to the motor 3 pump
 const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
 const float totalSolution = 100.0;  // Total solution in liters
 
+int plantSelected;
+
 AirPump pump(motorN, motorP, motorK);
 RTC_DS3231 rtc;
 
@@ -126,10 +128,9 @@ void setup() {
   pinMode(humRelayPin, OUTPUT);           // set humidity relay pin as output
   pinMode(airQualityRelayPin, OUTPUT);    // set air quality relay pin as output
   pinMode(soilMoistureRelayPin, OUTPUT);  // set soil moisture relay pin as output
-
-  previouslyFertilized = 0;
-  EEPROM.put(0, previouslyFertilized);
-  delay(200);
+  // EEPROM.put(0,0);
+  EEPROM.get(0,previouslyFertilized);
+  EEPROM.get(2,plantSelected);
 
   dht.begin();  // initialize the sensor
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -174,14 +175,10 @@ void printPlantData(Plant plant) {
   token = strtok(NULL, "-");
   K = atoi(token);
 
-  EEPROM.get(0, previouslyFertilized);
-  delay(200);
-  Serial.println(previouslyFertilized);
-  if( previouslyFertilized == 0){
+  if(previouslyFertilized == 0){
     pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    previouslyFertilized = 5;
-    EEPROM.put(0, previouslyFertilized);
-    delay(200);
+    Serial.println("ran the motors");
+    EEPROM.put(0,1);
   }
   
 
@@ -214,20 +211,20 @@ void printPlantData(Plant plant) {
 void loop() {
 
   light.start(); //begins the lighting process which is fading in and out 
-  // read temperature and humidity from DHT11 sensor
   hum = dht.readHumidity();
   temp = dht.readTemperature();
 
   // read air quality from MQ135 sensor
   ppm = gasSensor.getPPM();
 
-  // read soil moisture from capacitive sensor
+  //callibrate this for soil moisture
   soilMoisture = map(analogRead(soilPin), 750, 350, 0, 100);
 
   unsigned long current_time = millis();
 
   if (current_time - last_debounce_time >= debounce_delay) {
     if (digitalRead(BUTTON_UP) == LOW) {
+      EEPROM.put(2,0);
       if (current_plant_index > 0) {
         current_plant_index--;
         if (current_plant_index < top_menu_item_index) {
@@ -237,6 +234,7 @@ void loop() {
       }
       last_debounce_time = current_time;
     } else if (digitalRead(BUTTON_DOWN) == LOW) {
+      EEPROM.put(2,0);
       if (current_plant_index < num_plants - 1) {
         current_plant_index++;
         if (current_plant_index >= top_menu_item_index + num_menu_items) {
@@ -247,8 +245,7 @@ void loop() {
       last_debounce_time = current_time;
     } else if (digitalRead(BUTTON_SELECT) == LOW) {
       Plant plant = plants[current_plant_index];
-      EEPROM.write(2,current_plant_index);
-      delay(200);
+      EEPROM.put(2,1);
       printPlantData(plant);
       last_debounce_time = current_time;
     }
@@ -332,8 +329,7 @@ void waterover() {
   functionCalled = true;
   startTimeforpump = 0;
   previouslyFertilized = 0;
-  EEPROM.put(0, previouslyFertilized);
-  delay(200);
+  EEPROM.put(0,0);
   digitalWrite(soilMoistureRelayPin, LOW);
   display.clearDisplay();
   display.setTextSize(1);
