@@ -22,6 +22,8 @@ const int motorN = 7;                // Pin connected to the motor Nitrogen pump
 const int motorP = 8;                // Pin connected to the motor Phosphorus pump
 const int motorK = 9;                // Pin connected to the motor Potasium pump
 
+const int eepromSize = 30; // Set the EEPROM size as needed
+
 #define DHTTYPE DHT11
 #define RLOAD 22.0
 
@@ -49,7 +51,7 @@ int tempThreshold;         // temperature threshold (in °C) generally 25, store
 int humThreshold;          // humidity threshold (in %) genrally 40, stored in eeprom address 10
 int airQualityThreshold;   // air quality threshold generally 1800, stored in eeprom address 15
 int soilMoistureThreshold; // soil moisture threshold generally 10, stored in eeprom address 20
-char *plantName;           // store in address 40 onwards
+String plantName;          // store in address 40 onwards
 int plantSelected;         // sored in EEPROM address 2
 int previouslyFertilized;  // stored in EEPROM address 0
 
@@ -132,6 +134,7 @@ void setup()
   EEPROM.get(25, N);
   EEPROM.get(30, P);
   EEPROM.get(35, K);
+  plantName = readStringFromEEPROM(40);
   Serial.println("printing all the stored eeprom values");
   Serial.println(previouslyFertilized);
   Serial.println(plantSelected);
@@ -244,6 +247,7 @@ void drawMenu()
   }
   display.display();
 }
+
 void storePlantData(Plant plant)
 {
   char *token = strtok(plant.npk_ratio, "-");
@@ -252,7 +256,8 @@ void storePlantData(Plant plant)
   P = atoi(token);
   token = strtok(NULL, "-");
   K = atoi(token);
-  plantName = plant.name;
+  plantName = String(plant.name);
+  storeStringToEEPROM(40, plantName);
   EEPROM.put(25, N);
   EEPROM.put(30, P);
   EEPROM.put(35, K);
@@ -429,4 +434,29 @@ void printSensorData()
     // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
     printf("%.2f-%.2f-%i-%.2f \n", hum, temp, soilMoisture, ppm);
   }
+}
+
+void storeStringToEEPROM(int address, const String &data)
+{
+  int length = data.length();
+  for (int i = 0; i < length; ++i)
+  {
+    EEPROM.write(address + i, data[i]);
+  }
+  // Null-terminate the string in EEPROM
+  EEPROM.write(address + length, '\0');
+}
+
+String readStringFromEEPROM(int address)
+{
+  String data = "";
+  char ch = EEPROM.read(address);
+  int i = 0;
+  while (ch != '\0' && i < eepromSize)
+  {
+    data += ch;
+    ++i;
+    ch = EEPROM.read(address + i);
+  }
+  return data;
 }
