@@ -123,7 +123,7 @@ void setup()
   pinMode(tempRelayPin, OUTPUT);
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
-  pinMode(soilMoistureRelayPin, OUTPUT);
+
   // EEPROM.put(0,0);
   EEPROM.get(0, previouslyFertilized);
   EEPROM.get(2, plantSelected);
@@ -188,6 +188,7 @@ void loop()
     if (digitalRead(BUTTON_UP) == LOW)
     {
       EEPROM.put(2, 0);
+      EEPROM.put(0, 0);
       if (current_plant_index > 0)
       {
         current_plant_index--;
@@ -202,6 +203,7 @@ void loop()
     else if (digitalRead(BUTTON_DOWN) == LOW)
     {
       EEPROM.put(2, 0);
+      EEPROM.put(0, 0);
       if (current_plant_index < num_plants - 1)
       {
         current_plant_index++;
@@ -277,12 +279,6 @@ void storePlantData(Plant plant)
 void printPlantData()
 {
 
-  if (previouslyFertilized == 0)
-  {
-    pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    Serial.println("ran the motors");
-    EEPROM.put(0, 1);
-  }
   Serial.begin(9600);
   display.clearDisplay();
   display.setTextSize(1);
@@ -303,6 +299,12 @@ void printPlantData()
   display.println("C");
   display.display();
   // display.startscrollleft(0x00, 0x07);
+  if (previouslyFertilized == 0)
+  {
+    pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
+    Serial.println("ran the motors");
+    EEPROM.put(0, 1);
+  }
 }
 
 void relaycontrol()
