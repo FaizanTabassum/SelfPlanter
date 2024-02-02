@@ -9,29 +9,33 @@
 #include "lights.h"
 #include "AirPump.h"
 
+// DEFINE YOUR PINS HERE
 #define DHTPIN 3
-#define RLOAD 22.0
-#define DHTTYPE DHT11
 #define LIGHTPIN 13
-const int LED_PIN = 13;
-const int mq135Pin = A0;       // Analog input pin connected to the MQ135 gas sensor
-int soilPin = A1;              // soil moisture sensor pin
-int tempRelayPin = 11;         // temperature relay pin
-int humRelayPin = 6;           // humidity relay pin
-int airQualityRelayPin = 12;   // air quality relay pin
-int soilMoistureRelayPin = 10; // soil moisture relay pin
+const int mq135Pin = A0;             // Analog input pin connected to the MQ135 gas sensor
+const int soilPin = A1;              // soil moisture sensor pin
+const int tempRelayPin = 11;         // temperature relay pin
+const int humRelayPin = 6;           // humidity relay pin
+const int airQualityRelayPin = 12;   // air quality relay pin
+const int soilMoistureRelayPin = 10; // soil moisture relay pin
+const int motorN = 7;                // Pin connected to the motor Nitrogen pump
+const int motorP = 8;                // Pin connected to the motor Phosphorus pump
+const int motorK = 9;                // Pin connected to the motor Potasium pump
 
+#define DHTTYPE DHT11
+#define RLOAD 22.0
+
+// Declare the sensor objects
 DHT dht(DHTPIN, DHTTYPE);
-
 Lights light(LIGHTPIN, 1500);
-
 MQ135 gasSensor = MQ135(mq135Pin);
+AirPump pump(motorN, motorP, motorK);
+RTC_DS3231 rtc;
 
+// variables read from the sensor
 float hum = 0;
 int soilMoisture = 0;
 float temp = 0;
-
-// co2 sensor
 float ppm; // decleration of variable for the air quality in ppm
 
 // Variables to store time
@@ -46,22 +50,15 @@ int humThreshold;          // humidity threshold (in %) genrally 40, stored in e
 int airQualityThreshold;   // air quality threshold generally 1800, stored in eeprom address 15
 int soilMoistureThreshold; // soil moisture threshold generally 10, stored in eeprom address 20
 char *plantName;           // store in address 40 onwards
+int plantSelected;         // sored in EEPROM address 2
+int previouslyFertilized;  // stored in EEPROM address 0
 
-// npk values for the airpumps
 int N; // store in EEPROM address 25
 int P; // store in EEPROM address 30
 int K; // store in EEPROM address 35
-int previouslyFertilized;
-const int motorN = 7;                // Pin connected to the motor 1 pump
-const int motorP = 8;                // Pin connected to the motor 2 pump
-const int motorK = 9;                // Pin connected to the motor 3 pump
+
 const float pumpRate = 5.0 / 1000.0; // Pump rate in liters per second
 const float totalSolution = 100.0;   // Total solution in liters
-
-int plantSelected;
-
-AirPump pump(motorN, motorP, motorK);
-RTC_DS3231 rtc;
 
 // Oled display parameters
 #define OLED_RESET A3
@@ -118,13 +115,13 @@ void setup()
   pump.init();
   Serial.begin(9600);
   Wire.begin();
-  rtc.begin();                           // initialize serial communication
-  pinMode(mq135Pin, INPUT);              // input for the mq135 pin
-  pinMode(soilPin, INPUT);               // input for the soil pin
-  pinMode(tempRelayPin, OUTPUT);         // set temperature relay pin as output
-  pinMode(humRelayPin, OUTPUT);          // set humidity relay pin as output
-  pinMode(airQualityRelayPin, OUTPUT);   // set air quality relay pin as output
-  pinMode(soilMoistureRelayPin, OUTPUT); // set soil moisture relay pin as output
+  rtc.begin();
+  pinMode(mq135Pin, INPUT);
+  pinMode(soilPin, INPUT);
+  pinMode(tempRelayPin, OUTPUT);
+  pinMode(humRelayPin, OUTPUT);
+  pinMode(airQualityRelayPin, OUTPUT);
+  pinMode(soilMoistureRelayPin, OUTPUT);
   // EEPROM.put(0,0);
   EEPROM.get(0, previouslyFertilized);
   EEPROM.get(2, plantSelected);
@@ -259,11 +256,13 @@ void storePlantData(Plant plant)
   EEPROM.put(25, N);
   EEPROM.put(30, P);
   EEPROM.put(35, K);
-  tempThreshold = plant.temperature;     // temperature threshold (in °C)
-  humThreshold = plant.humidity;         // humidity threshold (in %)
-  airQualityThreshold = plant.co2_level; // air quality threshold
+  tempThreshold = plant.temperature;
+  humThreshold = plant.humidity;
+  airQualityThreshold = plant.co2_level;
   soilMoistureThreshold = plant.soil_moisture;
-  EEPROM.put(5, tempThreshold); // store all the values in the eeprom
+
+  // store all the values in the eeprom
+  EEPROM.put(5, tempThreshold);
   EEPROM.put(10, humThreshold);
   EEPROM.put(15, airQualityThreshold);
   EEPROM.put(20, soilMoistureThreshold);
