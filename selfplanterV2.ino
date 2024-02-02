@@ -44,22 +44,22 @@ unsigned long startTimeforpump = 0;  // the time when the sensor value first fel
 bool functionCalled = false;         // flag to indicate if the function has been called
 
 
-int tempThreshold = 25;          // temperature threshold (in °C)
-int humThreshold = 40;           // humidity threshold (in %)
-int airQualityThreshold = 1800;  // air quality threshold
-int soilMoistureThreshold = 10;  // soil moisture threshold
-
+int tempThreshold;          // temperature threshold (in °C) generally 25, stored in eeprom address 5
+int humThreshold;           // humidity threshold (in %) genrally 40, stored in eeprom address 10
+int airQualityThreshold;    // air quality threshold generally 1800, stored in eeprom address 15
+int soilMoistureThreshold;  // soil moisture threshold generally 10, stored in eeprom address 20
+char* plantName;
 
 // npk values for the airpumps
-int N;
-int P;
-int K;
+int N;// store in EEPROM address 25
+int P;// store in EEPROM address 30
+int K;// store in EEPROM address 35
 int previouslyFertilized;
-const int motorN = 7;              // Pin connected to the motor 1 pump
-const int motorP = 8;              // Pin connected to the motor 2 pump
-const int motorK = 9;              // Pin connected to the motor 3 pump
+const int motorN = 7;                 // Pin connected to the motor 1 pump
+const int motorP = 8;                 // Pin connected to the motor 2 pump
+const int motorK = 9;                 // Pin connected to the motor 3 pump
 const float pumpRate = 5.0 / 1000.0;  // Pump rate in liters per second
-const float totalSolution = 100.0;  // Total solution in liters
+const float totalSolution = 100.0;    // Total solution in liters
 
 int plantSelected;
 
@@ -131,81 +131,41 @@ void setup() {
   // EEPROM.put(0,0);
   EEPROM.get(0,previouslyFertilized);
   EEPROM.get(2,plantSelected);
+  EEPROM.get(5,tempThreshold);
+  EEPROM.get(10,humThreshold);
+  EEPROM.get(15,airQualityThreshold);
+  EEPROM.get(20,soilMoistureThreshold);
+  EEPROM.get(25,N);
+  EEPROM.get(30,P);
+  EEPROM.get(35,K);
+  Serial.println("printing all the stored eeprom values");
+  Serial.println(previouslyFertilized);
+  Serial.println(plantSelected);
+  Serial.println(tempThreshold);
+  Serial.println(humThreshold);
+  Serial.println(airQualityThreshold);
+  Serial.println(soilMoistureThreshold);
+  Serial.println(N);
+  Serial.println(P);
+  Serial.println(K);
 
   dht.begin();  // initialize the sensor
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("To start growing");
-  display.println("Select a plant:");
-  display.display();
+  if(plantSelected == 0){
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0, 0);
+      display.println("To start growing");
+      display.println("Select a plant:");
+      display.display();}
+  else{
+      printPlantData();
+  }
 
   pinMode(BUTTON_UP, INPUT_PULLUP);
   pinMode(BUTTON_DOWN, INPUT_PULLUP);
   pinMode(BUTTON_SELECT, INPUT_PULLUP);
-}
-
-void drawMenu() {
-  display.stopscroll();
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  for (uint8_t i = 0; i < num_menu_items && top_menu_item_index + i < num_plants; i++) {
-    uint8_t plant_index = top_menu_item_index + i;
-    if (plant_index == current_plant_index) {
-      display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    }
-    else
-    {
-      display.setTextColor(SSD1306_WHITE);
-    }
-    display.println(plants[plant_index].name);
-  }
-  display.display();
-}
-
-void printPlantData(Plant plant) {
-  char* token = strtok(plant.npk_ratio, "-");
-  N = atoi(token);
-
-  token = strtok(NULL, "-");
-  P = atoi(token);
-
-  token = strtok(NULL, "-");
-  K = atoi(token);
-
-  if(previouslyFertilized == 0){
-    pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    Serial.println("ran the motors");
-    EEPROM.put(0,1);
-  }
-  
-
-  tempThreshold = plant.temperature;      // temperature threshold (in °C)
-  humThreshold = plant.humidity;          // humidity threshold (in %)
-  airQualityThreshold = plant.co2_level;  // air quality threshold
-  soilMoistureThreshold = plant.soil_moisture;
-  Serial.begin(9600);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println(plant.name);
-  display.print("hum = ");
-  display.print(plant.humidity);
-  display.print("%");
-  display.print("    sm = ");
-  display.print(plant.soil_moisture);
-  display.println("%");
-  display.print("Co2 = ");
-  display.print(plant.co2_level);
-  display.println("ppm");
-  display.print("temp = ");
-  display.print(plant.temperature);
-  display.println("C");
-  display.display();
-  // display.startscrollleft(0x00, 0x07);
 }
 
 void loop() {
@@ -246,7 +206,8 @@ void loop() {
     } else if (digitalRead(BUTTON_SELECT) == LOW) {
       Plant plant = plants[current_plant_index];
       EEPROM.put(2,1);
-      printPlantData(plant);
+      storePlantData(plant);
+      printPlantData();
       last_debounce_time = current_time;
     }
   }
@@ -254,6 +215,76 @@ void loop() {
   relaycontrol();
   delay(10);
 }
+
+void drawMenu() {
+  display.stopscroll();
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  for (uint8_t i = 0; i < num_menu_items && top_menu_item_index + i < num_plants; i++) {
+    uint8_t plant_index = top_menu_item_index + i;
+    if (plant_index == current_plant_index) {
+      display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
+    }
+    else
+    {
+      display.setTextColor(SSD1306_WHITE);
+    }
+    display.println(plants[plant_index].name);
+  }
+  display.display();
+}
+void storePlantData(Plant plant){
+  char* token = strtok(plant.npk_ratio, "-");
+  N = atoi(token); 
+  token = strtok(NULL, "-");
+  P = atoi(token);
+  token = strtok(NULL, "-");
+  K = atoi(token);
+  plantName = plant.name;
+  EEPROM.put(25, N);
+  EEPROM.put(30,P);
+  EEPROM.put(35,K);
+  tempThreshold = plant.temperature;      // temperature threshold (in °C)
+  humThreshold = plant.humidity;          // humidity threshold (in %)
+  airQualityThreshold = plant.co2_level;  // air quality threshold
+  soilMoistureThreshold = plant.soil_moisture;
+  EEPROM.put(5,tempThreshold);            //store all the values in the eeprom
+  EEPROM.put(10,humThreshold);
+  EEPROM.put(15,airQualityThreshold);
+  EEPROM.put(20,soilMoistureThreshold);
+
+}
+
+void printPlantData() {
+
+  if(previouslyFertilized == 0){
+    pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
+    Serial.println("ran the motors");
+    EEPROM.put(0,1);
+  }
+  Serial.begin(9600);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println(plantName);
+  display.print("hum = ");
+  display.print(humThreshold);
+  display.print("%");
+  display.print("    sm = ");
+  display.print(soilMoistureThreshold);
+  display.println("%");
+  display.print("Co2 = ");
+  display.print(airQualityThreshold);
+  display.println("ppm");
+  display.print("temp = ");
+  display.print(tempThreshold);
+  display.println("C");
+  display.display();
+  // display.startscrollleft(0x00, 0x07);
+}
+
+
 
 void relaycontrol() {
   static unsigned long lastMillis = 0;
