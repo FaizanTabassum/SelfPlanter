@@ -434,7 +434,7 @@ void printSensorData()
     lastMillis = currentMillis;
 
     // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
-    printf("%.2f-%.2f-%i-%.2f \n", hum, temp, soilMoisture, ppm);
+    printf("%s-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", plantName, hum, temp, soilMoisture, ppm, N, P, K);
   }
 }
 
