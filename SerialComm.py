@@ -24,11 +24,6 @@ loop
 
 '''
 
-
-'''
-
-'''
-
 import serial
 import time
 

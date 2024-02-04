@@ -2,6 +2,7 @@
 #include "MQ135.h"
 #include "DHT.h"
 #include <Wire.h>
+#include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
@@ -170,7 +171,7 @@ void setup()
 
 void loop()
 {
-
+  readThresholdValues();
   light.start(); // begins the lighting process which is fading in and out
   hum = dht.readHumidity();
   temp = dht.readTemperature();
@@ -434,7 +435,47 @@ void printSensorData()
     lastMillis = currentMillis;
 
     // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
-    printf("%s-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", plantName, hum, temp, soilMoisture, ppm, N, P, K);
+    Serial.print(plantName);
+    printf("-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", hum, temp, soilMoisture, ppm, N, P, K);
+  }
+}
+void readThresholdValues()
+{
+  if (Serial.available() > 0)
+  {
+    String data = Serial.readStringUntil('\n');
+    char *dataCopy = new char[data.length() + 1];
+    strcpy(dataCopy, data.c_str());
+
+    char *token = strtok(dataCopy, "-");
+    plantName = token;
+    token = strtok(NULL, "-");
+    tempThreshold = atof(token);
+    token = strtok(NULL, "-");
+    humThreshold = atof(token);
+    token = strtok(NULL, "-");
+    airQualityThreshold = atoi(token);
+    token = strtok(NULL, "-");
+    soilMoistureThreshold = atoi(token);
+    token = strtok(NULL, "-");
+    N = atoi(token);
+    token = strtok(NULL, "-");
+    P = atoi(token);
+    token = strtok(NULL, "-");
+    K = atoi(token);
+
+    delete[] dataCopy;
+
+    EEPROM.put(5, tempThreshold);
+    EEPROM.put(10, humThreshold);
+    EEPROM.put(15, airQualityThreshold);
+    EEPROM.put(20, soilMoistureThreshold);
+    EEPROM.put(25, N);
+    EEPROM.put(30, P);
+    EEPROM.put(35, K);
+    EEPROM.put(2, 1);
+    storeStringToEEPROM(40, plantName);
+    printPlantData();
   }
 }
 
