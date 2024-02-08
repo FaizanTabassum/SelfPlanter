@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera Feed</title>
+</head>
+<body>
+    <img id="camera-feed" alt="Live Camera Feed" style="width: 100%;">
+    
+    <script>
+        const websocket = new WebSocket("ws://127.0.0.1:8000/live_camera");
+        const imgElement = document.getElementById("camera-feed");
+
+        websocket.onmessage = (event) => {
+            const imgSrc = "data:image/jpeg;base64," + btoa(String.fromCharCode.apply(null, new Uint8Array(event.data)));
+            imgElement.src = imgSrc;
+        };
+
+        websocket.onclose = (event) => {
+            console.error("WebSocket closed:", event);
+        };
+    </script>
+</body>
+</html>

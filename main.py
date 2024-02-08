@@ -1,7 +1,8 @@
-from fastapi import FastAPI, BackgroundTasks, Depends
+from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
 import json
 import asyncio
+import cv2
 
 app = FastAPI()
 
@@ -30,7 +31,7 @@ async def update_uart_data():
         app.state.uart_data = parsed_data
         await asyncio.sleep(5)
 
-@app.get("/uart-data")
+@app.get("/uart_data")
 async def get_uart_data():
     return app.state.uart_data
 
@@ -38,6 +39,34 @@ async def get_uart_data():
 async def startup_event():
     app.state.uart_data = {}
     asyncio.create_task(update_uart_data())
+
+async def capture_video(websocket: WebSocket):
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        error_message = "Error: Could not open camera."
+        await websocket.send_text(error_message)
+        return
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            _, buffer = cv2.imencode('.jpg', frame)
+            img_str = buffer.tobytes()
+
+            await websocket.send_bytes(img_str)
+
+            await asyncio.sleep(0.1)
+    finally:
+        cap.release()
+
+@app.websocket("/live_camera")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    await capture_video(websocket)
 
 @app.get("/")
 def read_hello():
