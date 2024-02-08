@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UART Data</title>
+</head>
+<body>
+    <div id="uart-data"></div>
+
+    <script>
+        const uartDataElement = document.getElementById("uart-data");
+
+        const fetchUartData = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/uart_data");
+                const uartData = await response.json();
+                
+                // Display UART data in the HTML
+                uartDataElement.textContent = JSON.stringify(uartData, null, 2);
+            } catch (error) {
+                console.error("Error fetching UART data:", error);
+            }
+        };
+
+        // Fetch UART data periodically (adjust as needed)
+        setInterval(fetchUartData, 5000);
+
+        // Initial fetch
+        fetchUartData();
+    </script>
+</body>
+</html>

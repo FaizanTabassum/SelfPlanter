@@ -8,12 +8,12 @@ import serial
 app = FastAPI()
 
 def fetch_uart_data():
-    try:
-        with serial.Serial('/dev/tty1', baudrate=9600, timeout=1) as uart_port:
-            uart_data = uart_port.readline().decode('utf-8').strip()
-        return uart_data
-    except serial.SerialException as e:
-        print(f"Error reading UART data: {e}")
+    # try:
+    #     with serial.Serial('/dev/tty1', baudrate=9600, timeout=1) as uart_port:
+    #         uart_data = uart_port.readline().decode('utf-8').strip()
+    #     return uart_data
+    # except serial.SerialException as e:
+    #     print(f"Error reading UART data: {e}")
         raw_data = "Strawberry-60-70-18.00-400-10-20-30"
         return raw_data
 
