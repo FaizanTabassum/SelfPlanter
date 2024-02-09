@@ -13,8 +13,8 @@
 // DEFINE YOUR PINS HERE
 #define DHTPIN 3
 #define LIGHTPIN 13
-const int mq135Pin = A0;             // Analog input pin connected to the MQ135 gas sensorww
-const int soilPin = A1;              // soil moisture sensor pin
+const int mq135Pin = A13;            // Analog input pin connected to the MQ135 gas sensorww
+const int soilPin = A14;             // soil moisture sensor pin
 const int tempRelayPin = 9;          // temperature relay pin
 const int humRelayPin = 10;          // humidity relay pin
 const int airQualityRelayPin = 11;   // air quality relay pin
@@ -25,7 +25,7 @@ const int motorK = 8;                // Pin connected to the motor Potasium pump
 
 const int eepromSize = 30; // Set the EEPROM size as needed
 
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 #define RLOAD 22.0
 
 // Declare the sensor objects
@@ -38,6 +38,7 @@ RTC_DS3231 rtc;
 // variables read from the sensor
 float hum = 0;
 int soilMoisture = 0;
+int soilMoistureRaw;
 float temp = 0;
 float ppm; // decleration of variable for the air quality in ppm
 
@@ -196,9 +197,6 @@ void setup()
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  // This line sets the RTC with an explicit date & time, for example to set
-  // January 21, 2014 at 3am you would call:
-  rtc.adjust(DateTime(2014, 1, 21, 17, 59, 50));
   light.init();
 
   // EEPROM.put(0,0);
@@ -252,7 +250,8 @@ void loop()
   ppm = gasSensor.getPPM();
 
   // callibrate this for soil moisture
-  soilMoisture = map(analogRead(soilPin), 750, 350, 0, 100);
+  soilMoisture = map(analogRead(soilPin), 520, 210, 0, 100);
+  soilMoistureRaw = analogRead(soilPin);
 
   unsigned long current_time = millis();
 
@@ -522,7 +521,7 @@ void printSensorData()
 
     // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
     Serial.print(plantName);
-    printf("-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", hum, temp, soilMoisture, ppm, N, P, K);
+    printf("-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", hum, temp, soilMoistureRaw, ppm, N, P, K);
   }
 }
 void readThresholdValues()
