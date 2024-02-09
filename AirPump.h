@@ -34,6 +34,7 @@ public:
 
   void runMotor(int ratioN, int ratioP, int ratioK, float pumpRate, float totalSolution)
   {
+
     float nitrogenSolution = totalSolution * ratioN / 100.0;
     float phosphorusSolution = totalSolution * ratioP / 100.0;
     float potassiumSolution = totalSolution * ratioK / 100.0;
@@ -50,7 +51,9 @@ public:
     unsigned long startTime = millis();
 
     // Run the pumps for the required time to add the desired amount of solution
-    while (millis() - startTime < (nitrogenTime + phosphorusTime + potassiumTime) * 1000)
+
+    int timeNeeded = max(max(nitrogenTime, phosphorusTime), potassiumTime);
+    while (millis() - startTime < (timeNeeded * 1000))
     {
       if (millis() - startTime < nitrogenTime * 1000)
       {

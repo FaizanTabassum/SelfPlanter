@@ -23,6 +23,19 @@ public:
   {
     pinMode(pin, OUTPUT);
     rtc.begin();
+    DateTime now = rtc.now();
+    int hour = now.hour();
+    if (hour > 6 && hour < 18)
+    {
+      pwm = 255;
+      analogWrite(pin, 255);
+    }
+
+    if (hour >= 18 || hour < 6)
+    {
+      analogWrite(pin, 0);
+      pwm = 0;
+    }
   }
   void start()
   {
@@ -46,6 +59,7 @@ public:
         }
       }
     }
+
     if (hour == 18 && minute >= 0 && minute <= (fadeDuration + 1))
     {
       if (seconds % int(fadeDuration * 60 / 255) == 0)

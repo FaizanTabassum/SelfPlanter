@@ -13,15 +13,15 @@
 // DEFINE YOUR PINS HERE
 #define DHTPIN 3
 #define LIGHTPIN 13
-const int mq135Pin = A0;             // Analog input pin connected to the MQ135 gas sensor
+const int mq135Pin = A0;             // Analog input pin connected to the MQ135 gas sensorww
 const int soilPin = A1;              // soil moisture sensor pin
-const int tempRelayPin = 11;         // temperature relay pin
-const int humRelayPin = 6;           // humidity relay pin
-const int airQualityRelayPin = 12;   // air quality relay pin
-const int soilMoistureRelayPin = 10; // soil moisture relay pin
-const int motorN = 7;                // Pin connected to the motor Nitrogen pump
-const int motorP = 8;                // Pin connected to the motor Phosphorus pump
-const int motorK = 9;                // Pin connected to the motor Potasium pump
+const int tempRelayPin = 9;          // temperature relay pin
+const int humRelayPin = 10;          // humidity relay pin
+const int airQualityRelayPin = 11;   // air quality relay pin
+const int soilMoistureRelayPin = 12; // soil moisture relay pin
+const int motorN = 6;                // Pin connected to the motor Nitrogen pump
+const int motorP = 7;                // Pin connected to the motor Phosphorus pump
+const int motorK = 8;                // Pin connected to the motor Potasium pump
 
 const int eepromSize = 30; // Set the EEPROM size as needed
 
@@ -30,7 +30,7 @@ const int eepromSize = 30; // Set the EEPROM size as needed
 
 // Declare the sensor objects
 DHT dht(DHTPIN, DHTTYPE);
-Lights light(LIGHTPIN, 1500);
+Lights light(LIGHTPIN, 5);
 MQ135 gasSensor = MQ135(mq135Pin);
 AirPump pump(motorN, motorP, motorK);
 RTC_DS3231 rtc;
@@ -67,7 +67,7 @@ const float totalSolution = 100.0;   // Total solution in liters
 #define OLED_RESET A3
 // Adafruit_SSD1306 display(OLED_RESET);
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
-#define BUTTON_UP 0
+#define BUTTON_UP 22
 #define BUTTON_DOWN 4
 #define BUTTON_SELECT 2
 
@@ -186,7 +186,7 @@ void setup()
   Wire.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
-  light.init();
+
   pump.init();
   Serial.begin(9600);
   rtc.begin();
@@ -195,6 +195,11 @@ void setup()
   pinMode(tempRelayPin, OUTPUT);
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // This line sets the RTC with an explicit date & time, for example to set
+  // January 21, 2014 at 3am you would call:
+  rtc.adjust(DateTime(2014, 1, 21, 17, 59, 50));
+  light.init();
 
   // EEPROM.put(0,0);
   EEPROM.get(0, previouslyFertilized);
@@ -347,13 +352,20 @@ void storePlantData(Plant plant)
 
 void printPlantData()
 {
-
   Serial.begin(9600);
+  DateTime now = rtc.now();
+  int hour = now.hour();
+  int minute = now.minute();
+  int seconds = now.second();
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.println(plantName);
+  display.print(plantName);
+  display.print("   Time: ");
+  display.print(hour);
+  display.print(":");
+  display.println(minute);
   display.print("Humidity = ");
   display.print(humThreshold);
   display.println("%");
