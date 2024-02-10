@@ -1,70 +1,114 @@
-'''
-Objectives:
-    Arduino:    
-        continuously read and recieve data
-        store in respective EEPROM address
-
-    Raspberry pi:
-        same thing, read and recieve data
-        develop the protocol and format
-        recieves: all live data(temp,hum,ppm,soilMoisture)
-        sends: threshold values(temp,humidity, AQ, plant name, NPK)
-'''
-
-'''
-Pseudocode:
-
-loop
-    check-for-data-from-api() [getAPI()]
-    if-data-recieved:
-        send-to-arduino()  [onDataRecv()]
-    Recieve-data-from-arduino()
-    if-data-recieved:
-        send-data-to-server/api() [postAPI()]
-
-'''
-
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+import json
+import asyncio
+import cv2
 import serial
-import time
 
-presetplant = ''
-def getAPI():  #this one's your job, saalim. whatever you get, add it to the
-    presetplant = 'placeholderium valuesera'
-    return
+app = FastAPI()
 
-def onDataRecv():  #Make it do the thing, future sufi
-    return
-
-def postAPI():
-    return
-
-port = ''  #enter the path to whatever port you're using here
-baudRate = 9600 #enter whatever baud rate is being used on the arduino
-
-ser = serial.Serial(port, baudRate, timeout = 1.0)
-time.sleep(3)  #Arduino restarts when port is opened, this sleep is so that no data is lost during the restart
-ser.reset_input_buffer()
-print("Serial Initialised Successfully")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
+def open_uart_port():
+    global uart_port
+    try:
+        uart_port = serial.Serial('/dev/tty1', baudrate=9600, timeout=1)
+    except serial.SerialException as e:
+        print(f"Error opening UART port: {e}")
 
-try:
+
+def fetch_uart_data():
+    global uart_port
+    try:
+        uart_data = uart_port.readline().decode('ascii').strip()
+        return uart_data
+    except serial.SerialException as e:
+        print(f"Error reading UART data: {e}")
+        raw_data = "Strawberry-60-70-18.00-400-10-20-30"
+        return raw_data
+
+# Function to parse the raw data
+
+
+def parse_uart_data(raw_data):
+    plant_name, humidity, temperature, soil_moisture, air_quality, nitrogen, phosphorus, potassium = raw_data.split(
+        '-')
+    return {
+        "plant_name": plant_name,
+        "humidity": float(humidity),
+        "temperature": float(temperature),
+        "soil_moisture": float(soil_moisture),
+        "air_quality": int(air_quality),
+        "nitrogen": int(nitrogen),
+        "phosphorus": int(phosphorus),
+        "potassium": int(potassium),
+    }
+
+
+async def update_uart_data():
     while True:
-        time.sleep(0.01)
-        if ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8')
-            print(line)
-            onDataRecv()
-except KeyboardInterrupt:  #change this to however you want to close the port
-    print('closing serial port')
-    ser.close()
+        raw_data = fetch_uart_data()
+        parsed_data = parse_uart_data(raw_data)
+
+        async with app.state.uart_data_lock:
+            app.state.uart_data = parsed_data
+
+        await asyncio.sleep(5)
 
 
+@app.get("/uart_data")
+async def get_uart_data():
+    async with app.state.uart_data_lock:
+        return app.state.uart_data
 
-# def sendData(values):
-#     try:
-#         ser.write(values'/n'.encode('utf-8'))
+
+@app.on_event("startup")
+async def startup_event():
+    open_uart_port()
+    app.state.uart_data = {}
+    app.state.uart_data_lock = asyncio.Lock()
+    asyncio.create_task(update_uart_data())
 
 
+async def capture_video(websocket: WebSocket):
+    cap = cv2.VideoCapture(0)
 
-ser.close()
+    if not cap.isOpened():
+        error_message = "Error: Could not open camera."
+        await websocket.send_text(error_message)
+        return
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            _, buffer = cv2.imencode('.jpg', frame)
+            img_str = buffer.tobytes()
+
+            await websocket.send_bytes(img_str)
+
+            await asyncio.sleep(0.1)
+    finally:
+        cap.release()
+
+
+@app.websocket("/live_camera")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    await capture_video(websocket)
+
+
+@app.get("/")
+def read_hello():
+    content = {"message": "Hello, World!"}
+    return JSONResponse(content=content)

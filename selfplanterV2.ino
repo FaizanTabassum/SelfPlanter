@@ -13,15 +13,15 @@
 // DEFINE YOUR PINS HERE
 #define DHTPIN 3
 #define LIGHTPIN 13
-const int mq135Pin = A13;            // Analog input pin connected to the MQ135 gas sensorww
-const int soilPin = A14;             // soil moisture sensor pin
-const int tempRelayPin = 9;          // temperature relay pin
-const int humRelayPin = 10;          // humidity relay pin
-const int airQualityRelayPin = 11;   // air quality relay pin
-const int soilMoistureRelayPin = 12; // soil moisture relay pin
-const int motorN = 6;                // Pin connected to the motor Nitrogen pump
-const int motorP = 7;                // Pin connected to the motor Phosphorus pump
-const int motorK = 8;                // Pin connected to the motor Potasium pump
+const int mq135Pin = A13;           // Analog input pin connected to the MQ135 gas sensorww
+const int soilPin = A14;            // soil moisture sensor pin
+const int tempRelayPin = 12;        // temperature relay pin
+const int humRelayPin = 11;         // humidity relay pin
+const int airQualityRelayPin = 10;  // air quality relay pin
+const int soilMoistureRelayPin = 9; // soil moisture relay pin
+const int motorN = 6;               // Pin connected to the motor Nitrogen pump
+const int motorP = 7;               // Pin connected to the motor Phosphorus pump
+const int motorK = 8;               // Pin connected to the motor Potasium pump
 
 const int eepromSize = 30; // Set the EEPROM size as needed
 
@@ -196,6 +196,7 @@ void setup()
   pinMode(tempRelayPin, OUTPUT);
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
+  pinMode(soilMoistureRelayPin, OUTPUT);
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   light.init();
 
@@ -521,7 +522,7 @@ void printSensorData()
 
     // Serial.println(rzero); //uncomment this line if you want to find the new rzero value for callibration purpose
     Serial.print(plantName);
-    printf("-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", hum, temp, soilMoistureRaw, ppm, N, P, K);
+    printf("-%.2f-%.2f-%i-%.2f-%i-%i-%i \n", hum, temp, soilMoisture, ppm, N, P, K);
   }
 }
 void readThresholdValues()
