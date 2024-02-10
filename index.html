@@ -7,20 +7,51 @@
     <title>Live Camera Feed</title>
 </head>
 <body>
+    <h1>Live Camera Feed</h1>
     <img id="camera-feed" alt="Live Camera Feed" style="width: 100%;">
-    
+
+    <h1>UART Data</h1>
+    <div id="uart-data"></div>
+
     <script>
-        const websocket = new WebSocket("ws://127.0.0.1:8000/live_camera");
         const imgElement = document.getElementById("camera-feed");
+        const uartDataElement = document.getElementById("uart-data");
 
-        websocket.onmessage = (event) => {
-            const imgSrc = "data:image/jpeg;base64," + btoa(String.fromCharCode.apply(null, new Uint8Array(event.data)));
+        const connectWebSocket = (endpoint, onDataReceived) => {
+            const websocket = new WebSocket(endpoint);
+
+            websocket.onmessage = (event) => {
+                onDataReceived(event.data);
+            };
+
+            websocket.onclose = (event) => {
+                console.error(`WebSocket closed for ${endpoint}:`, event);
+            };
+
+            return websocket;
+        };
+
+        const fetchUartData = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/uart_data");
+                const uartData = await response.json();
+                uartDataElement.textContent = JSON.stringify(uartData, null, 2);
+            } catch (error) {
+                console.error("Error fetching UART data:", error);
+            }
+        };
+
+        // Replace 'YOUR_RASPBERRY_PI_IP' with the actual IP address of your Raspberry Pi
+        const cameraWebSocket = connectWebSocket("ws://127.0.0.1:8000/live_camera", (data) => {
+            const imgSrc = `data:image/jpeg;base64,${btoa(data)}`;
             imgElement.src = imgSrc;
-        };
+        });
 
-        websocket.onclose = (event) => {
-            console.error("WebSocket closed:", event);
-        };
+        // Fetch UART data periodically (adjust as needed)
+        setInterval(fetchUartData, 5000);
+
+        // Initial fetch
+        fetchUartData();
     </script>
 </body>
 </html>
