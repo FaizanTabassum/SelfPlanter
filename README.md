@@ -110,7 +110,8 @@ Strawberry-60-70-18.00-400-10-20-30
 - Raspberry Pi streams live video of plants.
 - Machine learning model analyzes the video for real-time plant health monitoring.
 
-## Supported Plants (Not Yet Integrated)
+## Supported Plants
+These are just the preset values you can add in your own by either editting the code or adding them serially
 ```cpp
 Plant plants[] = {
     {"Strawberry", 60, 70, 18.0, 400, "10-20-30"},
