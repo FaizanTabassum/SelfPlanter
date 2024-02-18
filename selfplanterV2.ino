@@ -86,7 +86,7 @@ struct Plant
 };
 
 Plant plants[] = {
-    {"Strawberry", 60, 70, 18.0, 400, "10-20-30"},
+    {"Strawberry", 60, 65, 18.0, 400, "8-12-32"},
     {"Basil", 50, 60, 20.0, 500, "3-1-2"},
     {"Iceberg Lettuce", 60, 70, 16.0, 500, "10-10-10"},
     {"Mint", 50, 60, 22.0, 450, "6-3-3"},
@@ -199,9 +199,9 @@ void setup()
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
   pinMode(soilMoistureRelayPin, OUTPUT);
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   // January 21, 2014 at 3am you would call:
-  rtc.adjust(DateTime(2024, 1, 21, 5, 59, 30));
+  // rtc.adjust(DateTime(2024, 1, 21, 5, 59, 30));
   light.init();
 
   // EEPROM.put(0,0);
