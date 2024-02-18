@@ -30,7 +30,7 @@ const int eepromSize = 30; // Set the EEPROM size as needed
 
 // Declare the sensor objects
 DHT dht(DHTPIN, DHTTYPE);
-Lights light(LIGHTPIN, 15);
+Lights light(LIGHTPIN, 5);
 MQ135 gasSensor = MQ135(mq135Pin);
 AirPump pump(motorN, motorP, motorK);
 RTC_DS3231 rtc;
