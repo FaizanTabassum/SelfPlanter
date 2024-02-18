@@ -30,7 +30,7 @@ const int eepromSize = 30; // Set the EEPROM size as needed
 
 // Declare the sensor objects
 DHT dht(DHTPIN, DHTTYPE);
-Lights light(LIGHTPIN, 5);
+Lights light(LIGHTPIN, 15);
 MQ135 gasSensor = MQ135(mq135Pin);
 AirPump pump(motorN, motorP, motorK);
 RTC_DS3231 rtc;
@@ -63,7 +63,7 @@ int N; // store in EEPROM address 25
 int P; // store in EEPROM address 30
 int K; // store in EEPROM address 35
 
-const float pumpRate = 5.0 / 1000.0; // Pump rate in liters per second
+const float pumpRate = 100 / 1000.0; // Pump rate in liters per second
 const float totalSolution = 100.0;   // Total solution in liters
 
 // Oled display parameters
@@ -86,7 +86,7 @@ struct Plant
 };
 
 Plant plants[] = {
-    {"Strawberry", 60, 65, 18.0, 400, "8-12-32"},
+    {"Strawberry", 60, 65, 18.0, 400, "8-12-25"},
     {"Basil", 50, 60, 20.0, 500, "3-1-2"},
     {"Iceberg Lettuce", 60, 70, 16.0, 500, "10-10-10"},
     {"Mint", 50, 60, 22.0, 450, "6-3-3"},
@@ -390,12 +390,15 @@ void printPlantData()
   display.println(K);
   display.display();
   // display.startscrollleft(0x00, 0x07);
+  EEPROM.get(0, previouslyFertilized);
+  delay(200);
   if (previouslyFertilized == 0)
   {
     pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    Serial.println("ran the motors");
+    // Serial.println("ran the motors");
     EEPROM.put(0, 1);
     previouslyFertilized = 1;
+    delay(200);
   }
 }
 
@@ -463,7 +466,7 @@ void relaycontrol()
     {
       digitalWrite(soilMoistureRelayPin, LOW);
     }
-    if ((previousMoisture - 5 <= soilMoisture <= previousMoisture + 5) && soilMoisture < soilMoistureThreshold)
+    if ((previousMoisture - 5 <= soilMoisture <= previousMoisture + 5) && (soilMoisture < soilMoistureThreshold + 5))
     {
       unsigned long currentTime = millis();
       if (currentTime - previousTime >= 60000)
@@ -561,6 +564,7 @@ void storeStringToEEPROM(int address, const String &data)
   for (int i = 0; i < length; ++i)
   {
     EEPROM.write(address + i, data[i]);
+    delay(200);
   }
   // Null-terminate the string in EEPROM
   EEPROM.write(address + length, '\0');
@@ -576,6 +580,7 @@ String readStringFromEEPROM(int address)
     data += ch;
     ++i;
     ch = EEPROM.read(address + i);
+    delay(200);
   }
   return data;
 }

@@ -35,9 +35,9 @@ public:
   void runMotor(int ratioN, int ratioP, int ratioK, float pumpRate, float totalSolution)
   {
 
-    float nitrogenSolution = totalSolution * ratioN / 100.0;
-    float phosphorusSolution = totalSolution * ratioP / 100.0;
-    float potassiumSolution = totalSolution * ratioK / 100.0;
+    float nitrogenSolution = (2 / 1000) * totalSolution * ratioN / 100.0;
+    float phosphorusSolution = (2 / 1000) * totalSolution * ratioP / 100.0;
+    float potassiumSolution = (2 / 1000) * totalSolution * ratioK / 100.0;
 
     // Calculate the time to run each pump
     nitrogenTime = 2 + (nitrogenSolution / (pumpRate * 200.0));
