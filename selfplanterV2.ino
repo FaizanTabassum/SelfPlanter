@@ -46,8 +46,10 @@ float ppm; // decleration of variable for the air quality in ppm
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 
-unsigned long startTimeforpump = 0; // the time when the sensor value first fell below the threshold
-bool functionCalled = false;        // flag to indicate if the function has been called
+// unsigned long startTimeforpump = 0; // the time when the sensor value first fell below the threshold
+// bool functionCalled = false;        // flag to indicate if the function has been called
+int previousMoisture = 0;
+unsigned long previousTime = 0;
 
 int tempThreshold;         // temperature threshold (in °C) generally 25, stored in eeprom address 5
 int humThreshold;          // humidity threshold (in %) genrally 40, stored in eeprom address 10
@@ -198,6 +200,8 @@ void setup()
   pinMode(airQualityRelayPin, OUTPUT);
   pinMode(soilMoistureRelayPin, OUTPUT);
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // January 21, 2014 at 3am you would call:
+  rtc.adjust(DateTime(2024, 1, 21, 5, 59, 30));
   light.init();
 
   // EEPROM.put(0,0);
@@ -261,7 +265,7 @@ void loop()
     if (digitalRead(BUTTON_UP) == LOW)
     {
       EEPROM.put(2, 0);
-      // EEPROM.put(0, 0);
+      EEPROM.put(0, 0);
       if (current_plant_index > 0)
       {
         current_plant_index--;
@@ -276,7 +280,7 @@ void loop()
     else if (digitalRead(BUTTON_DOWN) == LOW)
     {
       EEPROM.put(2, 0);
-      // EEPROM.put(0, 0);
+      EEPROM.put(0, 0);
       if (current_plant_index < num_plants - 1)
       {
         current_plant_index++;
@@ -450,49 +454,34 @@ void relaycontrol()
 
     // trigger soil moisture relay if threshold is exceeded
 
-    // check if the sensor value is below the threshold
-    if (soilMoisture < soilMoistureThreshold - 10)
+    if (soilMoisture < soilMoistureThreshold - 5)
     {
-      if (soilMoisture < soilMoistureThreshold)
+      digitalWrite(soilMoistureRelayPin, HIGH);
+    }
+    else if (soilMoisture > soilMoistureThreshold + 5)
+    {
+      digitalWrite(soilMoistureRelayPin, LOW);
+    }
+    if (previousMoisture - 5 <= soilMoisture <= previousMoisture + 5)
+    {
+      unsigned long currentTime = millis();
+      if (currentTime - previousTime >= 60000)
       {
-        if (!functionCalled)
-        {
-          // check if this is the first time the sensor value has fallen below the threshold
-          if (startTimeforpump == 0)
-          {
-            startTimeforpump = millis(); // record the start time
-          }
-          else
-          {
-            // check if 10 seconds have passed since the start time
-            unsigned long currentTimeforpump = millis();
-            if (currentTimeforpump - startTimeforpump >= 60000)
-            {
-              // 10 seconds have passed, call the function
-              waterover();
-            }
-          }
-          digitalWrite(soilMoistureRelayPin, HIGH); // turn on the LED
-        }
-      }
-      else
-      {
-        // reset the start time and functionCalled flag if the sensor value is above the threshold
-        startTimeforpump = 0;
-        functionCalled = false;
-        digitalWrite(soilMoistureRelayPin, LOW); // turn off the LED
+        waterover();
       }
     }
     else
     {
-      digitalWrite(soilMoistureRelayPin, LOW);
+      // Reset timer and update previous moisture reading
+      previousTime = millis();
+      previousMoisture = soilMoisture;
     }
   }
 }
 void waterover()
 {
-  functionCalled = true;
-  startTimeforpump = 0;
+  // functionCalled = true;
+  // startTimeforpump = 0;
   previouslyFertilized = 0;
   EEPROM.put(0, 0);
   digitalWrite(soilMoistureRelayPin, LOW);
