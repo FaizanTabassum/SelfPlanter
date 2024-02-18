@@ -199,7 +199,7 @@ void setup()
   pinMode(humRelayPin, OUTPUT);
   pinMode(airQualityRelayPin, OUTPUT);
   pinMode(soilMoistureRelayPin, OUTPUT);
-  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2024, 1, 21, 5, 59, 30));
   light.init();
@@ -220,7 +220,7 @@ void setup()
   display.clearDisplay();
   display.drawBitmap(0, 0, epd_bitmap_selfplanter__1_, 128, 64, WHITE);
   display.display();
-  delay(5000);
+  delay(3000);
 
   display.clearDisplay();
   if (plantSelected == 0)
@@ -395,6 +395,7 @@ void printPlantData()
     pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
     // Serial.println("ran the motors");
     EEPROM.put(0, 1);
+    previouslyFertilized = 1;
   }
 }
 
@@ -462,7 +463,7 @@ void relaycontrol()
     {
       digitalWrite(soilMoistureRelayPin, LOW);
     }
-    if (previousMoisture - 5 <= soilMoisture <= previousMoisture + 5)
+    if ((previousMoisture - 5 <= soilMoisture <= previousMoisture + 5) && soilMoisture < soilMoistureThreshold)
     {
       unsigned long currentTime = millis();
       if (currentTime - previousTime >= 60000)
