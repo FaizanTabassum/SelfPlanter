@@ -389,7 +389,7 @@ void printPlantData()
   if (previouslyFertilized == 0)
   {
     pump.runMotor(N, P, K, pumpRate, totalSolution); // this part fertilizes the plant
-    Serial.println("ran the motors");
+    // Serial.println("ran the motors");
     EEPROM.put(0, 1);
   }
 }
