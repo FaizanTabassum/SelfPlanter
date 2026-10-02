@@ -3,6 +3,12 @@
 
 SelfPlanter is an Arduino and Raspberry Pi-based project designed for an intelligent, self-sustaining plant cultivation experience. This system provides precise control over environmental parameters, ensuring optimal conditions for various plant species. The project incorporates sensors such as temperature, humidity, Co2, SoilMoisture, smart watering mechanisms, and a live video stream with machine learning analysis for real-time plant health monitoring.
 
+## Demo Video
+
+[![Watch the SelfPlanter demo on YouTube](https://img.youtube.com/vi/UUdvqYnQaXs/hqdefault.jpg)](https://www.youtube.com/shorts/UUdvqYnQaXs)
+
+[▶ Watch the SelfPlanter demo on YouTube](https://www.youtube.com/shorts/UUdvqYnQaXs)
+
 # How did this project come to be
 
 The self-planter came about because I was tired of failing at growing plants like strawberries, lettuce, and rosemary due to the wrong weather conditions. I wanted something that could handle all the important stuff like temperature, humidity, soil moisture, and fertilization for me. Now, I've got this nifty system where I just pop in the seed and hit a button. No need to keep checking on it – it takes care of everything on its own.
